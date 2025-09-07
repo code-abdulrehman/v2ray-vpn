@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V2Ray VPN Manager</title>
+  <style>
+    :root {
+      --bg-main: #181c24;
+      --bg-card: #232834;
+      --bg-section: #232834;
+      --bg-header: #181c24;
+      --bg-accent: #232834;
+      --bg-info-card: #232834;
+      --bg-logs: #181c24;
+      --bg-log-container: #10131a;
+      --color-primary: #00bcd4;
+      --color-success: #4caf50;
+      --color-error: #ff5252;
+      --color-warning: #ffc107;
+      --color-text: #e0e0e0;
+      --color-muted: #8a8f98;
+      --color-border: #232834;
+      --color-card-border: #2c3240;
+      --color-notification-info: #1976d2;
+      --color-notification-success: #388e3c;
+      --color-notification-error: #d32f2f;
+      --color-notification-warning: #ffa000;
+      --color-upload: #00e676;
+      --color-download: #2979ff;
+      --color-ping: #ffd600;
+      --color-label: #8a8f98;
+      --color-shadow: rgba(0,0,0,0.7);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-main);
+      min-height: 100vh;
+      color: var(--color-text);
+      letter-spacing: 0.01em;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+      color: var(--color-primary);
+      background: var(--bg-header);
+      padding: 24px 0 8px 0;
+      border-radius: 18px 18px 0 0;
+      box-shadow: 0 2px 16px var(--color-shadow);
+    }
+
+    .header h1 {
+      font-size: 2.7rem;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 8px var(--color-shadow);
+      letter-spacing: 0.04em;
+    }
+
+    .header p {
+      font-size: 1.15rem;
+      opacity: 0.8;
+      color: var(--color-muted);
+    }
+
+    .main-card {
+      background: var(--bg-card);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px var(--color-shadow);
+      overflow: hidden;
+      margin-bottom: 32px;
+      border: 1.5px solid var(--color-card-border);
+    }
+
+    .connection-section {
+      padding: 40px 32px 32px 32px;
+      text-align: center;
+      background: var(--bg-section);
+      border-bottom: 1.5px solid var(--color-card-border);
+    }
+
+    .status-indicator {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.7rem;
+      font-weight: bold;
+      transition: all 0.3s cubic-bezier(.4,0,.2,1);
+      position: relative;
+      box-shadow: 0 0 24px 0 var(--color-shadow);
+      border: 4px solid var(--color-border);
+      background: #232834;
+    }
+
+    .status-disconnected {
+      background: #232834;
+      color: var(--color-error);
+      border-color: var(--color-error);
+    }
+
+    .status-connecting {
+      background: #232834;
+      color: var(--color-warning);
+      border-color: var(--color-warning);
+      animation: pulse 2s infinite;
+    }
+
+    .status-connected {
+      background: #232834;
+      color: var(--color-success);
+      border-color: var(--color-success);
+    }
+
+    .status-error {
+      background: #232834;
+      color: var(--color-error);
+      border-color: var(--color-error);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 24px 0 var(--color-warning); }
+      50% { box-shadow: 0 0 48px 8px var(--color-warning); }
+      100% { box-shadow: 0 0 24px 0 var(--color-warning); }
+    }
+
+    .connection-button {
+      background: linear-gradient(135deg, #232834 0%, #232834 100%);
+      color: var(--color-primary);
+      border: 2px solid var(--color-primary);
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(.4,0,.2,1);
+      margin: 0 10px;
+      box-shadow: 0 2px 10px var(--color-shadow);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .connection-button:hover {
+      background: var(--color-primary);
+      color: var(--bg-main);
+      border-color: var(--color-primary);
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 6px 20px var(--color-shadow);
+    }
+
+    .connection-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      background: #232834;
+      color: var(--color-muted);
+      border-color: var(--color-muted);
+    }
+
+    .connection-details {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin: 32px 0 0 0;
+      flex-wrap: wrap;
+    }
+
+    .connection-detail {
+      background: #232834;
+      border-radius: 12px;
+      padding: 18px 28px;
+      min-width: 180px;
+      border: 1.5px solid var(--color-card-border);
+      text-align: left;
+      color: var(--color-text);
+      box-shadow: 0 2px 8px var(--color-shadow);
+      margin-bottom: 12px;
+    }
+
+    .connection-detail-title {
+      font-size: 0.95rem;
+      color: var(--color-label);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .connection-detail-value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 2px;
+    }
+
+    .connection-detail-extra {
+      font-size: 0.85rem;
+      color: var(--color-muted);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 18px;
+      margin-top: 32px;
+    }
+
+    .stat-item {
+      background: #232834;
+      padding: 18px 0 12px 0;
+      border-radius: 12px;
+      text-align: center;
+      color: var(--color-text);
+      border: 1.5px solid var(--color-card-border);
+      box-shadow: 0 2px 8px var(--color-shadow);
+      min-width: 120px;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      color: var(--color-label);
+      letter-spacing: 0.04em;
+    }
+
+    .stat-upload .stat-value {
+      color: var(--color-upload);
+    }
+    .stat-download .stat-value {
+      color: var(--color-download);
+    }
+    .stat-ping .stat-value {
+      color: var(--color-ping);
+    }
+
+    .server-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      padding: 32px;
+      background: var(--bg-info-card);
+      border-bottom: 1.5px solid var(--color-card-border);
+    }
+
+    .info-card {
+      background: #232834;
+      padding: 22px 18px;
+      border-radius: 15px;
+      text-align: left;
+      border-left: 4px solid var(--color-primary);
+      border-top: 1.5px solid var(--color-card-border);
+      box-shadow: 0 2px 8px var(--color-shadow);
+      min-width: 180px;
+    }
+
+    .info-card h3 {
+      color: var(--color-primary);
+      margin-bottom: 10px;
+      font-size: 1.05rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .info-card .value {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+
+    .info-card .info-extra {
+      font-size: 0.9rem;
+      color: var(--color-muted);
+      margin-top: 2px;
+    }
+
+    .logs-section {
+      padding: 32px;
+      background: var(--bg-logs);
+      color: #00ff00;
+      border-radius: 0 0 20px 20px;
+    }
+
+    .logs-section h3 {
+      color: var(--color-primary);
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+    }
+
+    .logs-container {
+      background: var(--bg-log-container);
+      border-radius: 10px;
+      padding: 20px;
+      height: 300px;
+      overflow-y: auto;
+      font-family: 'Fira Mono', 'Courier New', monospace;
+      font-size: 0.98rem;
+      line-height: 1.5;
+      border: 1.5px solid var(--color-card-border);
+      color: var(--color-text);
+      box-shadow: 0 2px 8px var(--color-shadow);
+    }
+
+    .log-entry {
+      margin-bottom: 7px;
+      word-wrap: break-word;
+      color: var(--color-text);
+    }
+
+    .log-error {
+      color: var(--color-error);
+    }
+
+    .log-success {
+      color: var(--color-success);
+    }
+
+    .log-warning {
+      color: var(--color-warning);
+    }
+
+    .notification {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      padding: 16px 28px;
+      border-radius: 12px;
+      color: white;
+      font-weight: bold;
+      z-index: 1000;
+      transform: translateX(400px);
+      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+      font-size: 1.1rem;
+      box-shadow: 0 2px 16px var(--color-shadow);
+      min-width: 220px;
+      border: 2px solid transparent;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: var(--color-notification-success);
+      border-color: var(--color-success);
+    }
+
+    .notification.error {
+      background: var(--color-notification-error);
+      border-color: var(--color-error);
+    }
+
+    .notification.info {
+      background: var(--color-notification-info);
+      border-color: var(--color-primary);
+    }
+
+    .notification.warning {
+      background: var(--color-notification-warning);
+      border-color: var(--color-warning);
+      color: #232834;
+    }
+
+    /* Details Table for Advanced Info */
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+      background: #232834;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px var(--color-shadow);
+    }
+    .details-table th, .details-table td {
+      padding: 10px 14px;
+      text-align: left;
+      color: var(--color-text);
+      border-bottom: 1px solid var(--color-card-border);
+      font-size: 0.98rem;
+    }
+    .details-table th {
+      color: var(--color-primary);
+      background: #232834;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .details-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .container {
+        padding: 10px;
+      }
+      .header h1 {
+        font-size: 2rem;
+      }
+      .connection-section {
+        padding: 18px;
+      }
+      .server-info {
+        padding: 12px;
+        gap: 12px;
+      }
+      .logs-section {
+        padding: 12px;
+      }
+    }
+    @media (max-width: 600px) {
+      .main-card {
+        border-radius: 10px;
+      }
+      .header {
+        border-radius: 10px 10px 0 0;
+        padding: 12px 0 4px 0;
+      }
+      .status-indicator {
+        width: 80px;
+        height: 80px;
+        font-size: 1.5rem;
+      }
+      .server-info {
+        grid-template-columns: 1fr;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .connection-details {
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ V2Ray VPN Manager</h1>
+      <p>Secure your connection with advanced proxy technology</p>
+    </div>
+
+    <div class="main-card">
+      <div class="connection-section">
+        <div id="statusIndicator" class="status-indicator status-disconnected" title="Connection Status">
+          🔴
+        </div>
+        <h2 id="statusText" style="margin-bottom: 6px;">Disconnected</h2>
+        <p id="statusMessage" style="color:var(--color-muted);margin-bottom:18px;">
+          Click Connect to start your secure VPN connection
+        </p>
+        
+        <div style="margin: 30px 0;">
+          <button id="connectBtn" class="connection-button" onclick="toggleConnection()">
+            Connect
+          </button>
+          <button id="disconnectBtn" class="connection-button" onclick="disconnect()" style="display: none;">
+            Disconnect
+          </button>
+        </div>
+
+        <div class="connection-details">
+          <div class="connection-detail">
+            <div class="connection-detail-title">Public IP</div>
+            <div class="connection-detail-value" id="publicIp">--</div>
+            <div class="connection-detail-extra" id="ipType">IPv4/IPv6</div>
+          </div>
+          <div class="connection-detail">
+            <div class="connection-detail-title">Uptime</div>
+            <div class="connection-detail-value" id="uptime">--</div>
+            <div class="connection-detail-extra" id="connectedSince">Not connected</div>
+          </div>
+          <div class="connection-detail">
+            <div class="connection-detail-title">Last Error</div>
+            <div class="connection-detail-value" id="lastError" style="color:var(--color-error);">None</div>
+            <div class="connection-detail-extra" id="lastErrorTime"></div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-item stat-ping">
+            <div class="stat-value" id="pingValue">--</div>
+            <div class="stat-label">Ping (ms)</div>
+          </div>
+          <div class="stat-item stat-upload">
+            <div class="stat-value" id="uploadValue">0 KB/s</div>
+            <div class="stat-label">Upload</div>
+          </div>
+          <div class="stat-item stat-download">
+            <div class="stat-value" id="downloadValue">0 KB/s</div>
+            <div class="stat-label">Download</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="server-info">
+        <div class="info-card">
+          <h3>Server Name</h3>
+          <div class="value" id="serverName">V2Ray Server</div>
+          <div class="info-extra" id="serverIp">IP: --</div>
+        </div>
+        <div class="info-card">
+          <h3>Location</h3>
+          <div class="value" id="serverLocation">Unknown</div>
+          <div class="info-extra" id="serverCountry">Country: --</div>
+        </div>
+        <div class="info-card">
+          <h3>Protocol</h3>
+          <div class="value" id="serverProtocol">V2Ray</div>
+          <div class="info-extra" id="serverPort">Port: --</div>
+        </div>
+        <div class="info-card">
+          <h3>Encryption</h3>
+          <div class="value" id="serverEncryption">AES-256</div>
+          <div class="info-extra" id="serverSecurity">TLS: --</div>
+        </div>
+      </div>
+
+      <div style="padding: 0 32px;">
+        <table class="details-table" id="advancedDetailsTable">
+          <thead>
+            <tr>
+              <th>Detail</th>
+              <th>Value</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Client Version</td>
+              <td id="clientVersion">--</td>
+              <td>V2Ray core version</td>
+            </tr>
+            <tr>
+              <td>Server Latency</td>
+              <td id="serverLatency">--</td>
+              <td>Measured in ms</td>
+            </tr>
+            <tr>
+              <td>Data Used</td>
+              <td id="dataUsed">--</td>
+              <td>Session total</td>
+            </tr>
+            <tr>
+              <td>Max Bandwidth</td>
+              <td id="maxBandwidth">--</td>
+              <td>Server limit</td>
+            </tr>
+            <tr>
+              <td>Last Config Update</td>
+              <td id="lastConfigUpdate">--</td>
+              <td>Config file timestamp</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="logs-section">
+        <h3>📋 Connection Logs</h3>
+        <div id="logs" class="logs-container">
+          <div class="log-entry">Waiting for connection...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+
+  <script>
+    let isConnected = false;
+    let statusInterval;
+    let logsInterval;
+
+    // Format bytes to human readable
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B/s';
+      const k = 1024;
+      const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // Format seconds to human readable uptime
+    function formatUptime(seconds) {
+      if (!seconds || seconds < 1) return '--';
+      const d = Math.floor(seconds / 86400);
+      const h = Math.floor((seconds % 86400) / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      let str = '';
+      if (d) str += d + 'd ';
+      if (h) str += h + 'h ';
+      if (m) str += m + 'm ';
+      if (s && !d && !h) str += s + 's';
+      return str.trim();
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type}`;
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3500);
+    }
+
+    // Update connection status and details
+    async function updateStatus() {
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+
+        // Status indicator
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const statusMessage = document.getElementById('statusMessage');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+
+        // Update status indicator
+        statusIndicator.className = `status-indicator status-${data.status}`;
+        switch(data.status) {
+          case 'connected':
+            statusIndicator.textContent = '🟢';
+            statusText.textContent = 'Connected';
+            statusMessage.textContent = 'Your connection is secure and protected';
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = 'inline-block';
+            connectBtn.disabled = false;
+            isConnected = true;
+            break;
+          case 'connecting':
+            statusIndicator.textContent = '🟡';
+            statusText.textContent = 'Connecting...';
+            statusMessage.textContent = 'Establishing secure connection...';
+            connectBtn.disabled = true;
+            disconnectBtn.style.display = 'none';
+            isConnected = false;
+            break;
+          case 'error':
+            statusIndicator.textContent = '🔴';
+            statusText.textContent = 'Connection Error';
+            statusMessage.textContent = 'Failed to establish connection';
+            connectBtn.style.display = 'inline-block';
+            disconnectBtn.style.display = 'none';
+            connectBtn.disabled = false;
+            isConnected = false;
+            break;
+          default:
+            statusIndicator.textContent = '🔴';
+            statusText.textContent = 'Disconnected';
+            statusMessage.textContent = 'Click Connect to start your secure VPN connection';
+            connectBtn.style.display = 'inline-block';
+            disconnectBtn.style.display = 'none';
+            connectBtn.disabled = false;
+            isConnected = false;
+        }
+
+        // Update server info
+        document.getElementById('serverName').textContent = data.server.name || 'V2Ray Server';
+        document.getElementById('serverIp').textContent = 'IP: ' + (data.server.ip || '--');
+        document.getElementById('serverLocation').textContent = data.server.location || 'Unknown';
+        document.getElementById('serverCountry').textContent = 'Country: ' + (data.server.country || '--');
+        document.getElementById('serverProtocol').textContent = data.server.protocol || 'V2Ray';
+        document.getElementById('serverPort').textContent = 'Port: ' + (data.server.port || '--');
+        document.getElementById('serverEncryption').textContent = data.server.encryption || 'AES-256';
+        document.getElementById('serverSecurity').textContent = 'TLS: ' + (data.server.tls ? 'Enabled' : 'Disabled');
+
+        // Update stats
+        document.getElementById('pingValue').textContent = data.server.ping || '--';
+        document.getElementById('uploadValue').textContent = formatBytes(data.server.upload);
+        document.getElementById('downloadValue').textContent = formatBytes(data.server.download);
+
+        // Update connection details
+        document.getElementById('publicIp').textContent = data.client && data.client.publicIp ? data.client.publicIp : '--';
+        document.getElementById('ipType').textContent = data.client && data.client.ipType ? data.client.ipType : 'IPv4/IPv6';
+        document.getElementById('uptime').textContent = formatUptime(data.uptime);
+        document.getElementById('connectedSince').textContent = data.connectedSince ? 'Since: ' + data.connectedSince : 'Not connected';
+        document.getElementById('lastError').textContent = data.lastError ? data.lastError : 'None';
+        document.getElementById('lastErrorTime').textContent = data.lastErrorTime ? 'At: ' + data.lastErrorTime : '';
+
+        // Advanced details table
+        document.getElementById('clientVersion').textContent = data.client && data.client.version ? data.client.version : '--';
+        document.getElementById('serverLatency').textContent = data.server && data.server.latency ? data.server.latency + ' ms' : '--';
+        document.getElementById('dataUsed').textContent = data.dataUsed ? formatBytes(data.dataUsed) : '--';
+        document.getElementById('maxBandwidth').textContent = data.server && data.server.maxBandwidth ? formatBytes(data.server.maxBandwidth) : '--';
+        document.getElementById('lastConfigUpdate').textContent = data.lastConfigUpdate || '--';
+
+      } catch (error) {
+        console.error('Failed to update status:', error);
+      }
+    }
+
+    // Load logs
+    async function loadLogs() {
+      try {
+        const response = await fetch('/api/logs');
+        const data = await response.json();
+        const logsContainer = document.getElementById('logs');
+        
+        if (data.logs && data.logs.length > 0) {
+          logsContainer.innerHTML = data.logs.map(log => {
+            const isError = log.toLowerCase().includes('error');
+            const isSuccess = log.toLowerCase().includes('started') || log.toLowerCase().includes('listening') || log.toLowerCase().includes('connected');
+            const isWarning = log.toLowerCase().includes('warning') || log.toLowerCase().includes('timeout');
+            let cls = '';
+            if (isError) cls = 'log-error';
+            else if (isSuccess) cls = 'log-success';
+            else if (isWarning) cls = 'log-warning';
+            return `<div class="log-entry ${cls}">${log}</div>`;
+          }).join('');
+          // Auto-scroll to bottom
+          logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+      } catch (error) {
+        console.error('Failed to load logs:', error);
+      }
+    }
+
+    // Toggle connection
+    async function toggleConnection() {
+      if (isConnected) {
+        await disconnect();
+      } else {
+        await connect();
+      }
+    }
+
+    // Connect to VPN
+    async function connect() {
+      try {
+        const response = await fetch('/api/start');
+        const data = await response.json();
+        if (data.success) {
+          showNotification('Connecting to VPN...', 'info');
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        showNotification('Failed to connect: ' + error.message, 'error');
+      }
+    }
+
+    // Disconnect from VPN
+    async function disconnect() {
+      try {
+        const response = await fetch('/api/stop');
+        const data = await response.json();
+        if (data.success) {
+          showNotification('Disconnected from VPN', 'success');
+        } else {
+          showNotification(data.message, 'error');
+        }
+      } catch (error) {
+        showNotification('Failed to disconnect: ' + error.message, 'error');
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      updateStatus();
+      loadLogs();
+      // Update status every 2 seconds
+      statusInterval = setInterval(updateStatus, 2000);
+      // Update logs every 3 seconds
+      logsInterval = setInterval(loadLogs, 3000);
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+      if (statusInterval) clearInterval(statusInterval);
+      if (logsInterval) clearInterval(logsInterval);
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,17 @@
+{
+  "name": "vray-vpn",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["vpn", "v2ray", "proxy"],
+  "author": "",
+  "license": "ISC",
+  "description": "V2Ray VPN Management Interface",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
